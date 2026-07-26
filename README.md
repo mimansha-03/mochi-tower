@@ -8,7 +8,7 @@ A fun and addictive browser-based stacking game inspired by Japanese night marke
 
 | Start Screen | Gameplay | Game Over |
 |--------------|----------|-----------|
-| <img src="images/start.png" alt="Start Screen" width="250"> | <img src="images/gameplay.png" alt="Gameplay" width="250"> | <img src="images/gameover.png" alt="Game Over" width="250"> |
+| <img src="screenshot/home_screen.png" alt="Start Screen" width="250"> | <img src="screenshot/tower_stacking.png" alt="Gameplay" width="250"> | <img src="screenshot/game_over.png" alt="Game Over" width="250"> |
 ---
 
 ## ✨ Features
