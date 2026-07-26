@@ -4,6 +4,10 @@ A fun and addictive browser-based stacking game inspired by Japanese night marke
 
 ---
 
+## 🚀 Live Demo
+
+https://mochi-tower.onrender.com
+
 ## 📸 Preview
 
 | Start Screen | Gameplay | Game Over |
