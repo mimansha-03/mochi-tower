@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mochi Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#1B1B3A;
+    --sky-bottom:#0D0D24;
+    --lantern:#FFD37A;
+    --cream:#FFF8ED;
+    --cream-soft:#CFC9DE;
+    --vermilion:#E8543E;
+    --wood-a:#8A5A3A;
+    --wood-b:#6E4429;
+    --shadow: 0 16px 40px rgba(0,0,0,0.45);
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(circle at 50% 0%, #2A2A55, #0D0D24 70%);
+    font-family:'Nunito', sans-serif;
+    color:var(--cream);
+    padding:20px 12px;
+  }
+  .wrap{ width:100%; max-width:340px; }
+  h1{
+    font-family:'Zen Maru Gothic', sans-serif;
+    font-weight:900;
+    text-align:center;
+    margin:0 0 2px;
+    font-size:1.6rem;
+    letter-spacing:0.5px;
+    color:var(--cream);
+    text-shadow:0 2px 0 rgba(0,0,0,0.3);
+  }
+  .subtitle{
+    text-align:center;
+    font-size:0.8rem;
+    color:var(--cream-soft);
+    margin:0 0 12px;
+    font-weight:700;
+  }
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+    font-family:'Zen Maru Gothic', sans-serif;
+    font-weight:700;
+    font-size:0.9rem;
+  }
+  .topbar .pill{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
+    padding:5px 12px;
+    border-radius:16px;
+  }
+  .stage{
+    position:relative;
+    width:100%;
+    height:480px;
+    border-radius:24px;
+    overflow:hidden;
+    background:linear-gradient(180deg, var(--sky-top), var(--sky-bottom) 75%);
+    box-shadow:var(--shadow), inset 0 0 0 2px rgba(255,255,255,0.06);
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }
+  .bokeh{
+    position:absolute;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,211,122,0.55), rgba(255,211,122,0) 70%);
+    animation:drift linear infinite;
+    pointer-events:none;
+  }
+  .world{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:100%;
+    transition:transform 0.35s cubic-bezier(.2,.7,.3,1);
+  }
+  .base{
+    position:absolute;
+    left:50%;
+    bottom:0;
+    width:180px;
+    height:34px;
+    transform:translateX(-50%);
+    background:linear-gradient(180deg, var(--wood-a), var(--wood-b));
+    border-radius:10px 10px 4px 4px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.35);
+  }
+  .base::before, .base::after{
+    content:'';
+    position:absolute;
+    top:-22px;
+    width:14px;
+    height:22px;
+    background:var(--lantern);
+    border-radius:7px;
+    box-shadow:0 0 14px 4px rgba(255,211,122,0.55);
+  }
+  .base::before{ left:14px; }
+  .base::after{ right:14px; }
+  .block{
+    position:absolute;
+    bottom:34px;
+    height:24px;
+    border-radius:8px;
+    box-shadow:0 3px 6px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.35);
+  }
+  .block.perfect-glow{
+    animation:glowPulse 0.5s ease;
+  }
+  .moving{
+    position:absolute;
+    bottom:34px;
+    height:24px;
+    border-radius:8px;
+    box-shadow:0 3px 6px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.35);
+  }
+  .debris{
+    position:absolute;
+    height:24px;
+    border-radius:8px;
+    opacity:1;
+  }
+  .debris.falling{
+    transition:transform 0.7s cubic-bezier(.4,.4,.6,1), opacity 0.7s ease;
+    opacity:0;
+  }
+  .combo-toast{
+    position:absolute;
+    left:50%;
+    font-family:'Zen Maru Gothic', sans-serif;
+    font-weight:900;
+    font-size:1rem;
+    color:var(--lantern);
+    text-shadow:0 2px 6px rgba(0,0,0,0.6);
+    opacity:0;
+    transform:translate(-50%, 0);
+    pointer-events:none;
+  }
+  .combo-toast.show{
+    animation:toastFloat 0.9s ease forwards;
+  }
+  .hint{
+    text-align:center;
+    font-size:0.78rem;
+    color:var(--cream-soft);
+    margin-top:10px;
+    font-weight:700;
+  }
+  .overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(13,13,36,0.82);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:24px;
+    z-index:5;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Zen Maru Gothic', sans-serif;
+    font-weight:900;
+    font-size:1.4rem;
+    margin:0 0 8px;
+    color:var(--cream);
+  }
+  .overlay p{
+    font-size:0.85rem;
+    color:var(--cream-soft);
+    margin:0 0 18px;
+    max-width:240px;
+    font-weight:700;
+  }
+  .overlay .score-line{
+    font-family:'Zen Maru Gothic', sans-serif;
+    font-size:1.1rem;
+    margin-bottom:4px;
+  }
+  .overlay .best-line{
+    font-size:0.85rem;
+    color:var(--lantern);
+    font-weight:800;
+    margin-bottom:18px;
+  }
+  .play-btn{
+    font-family:'Zen Maru Gothic', sans-serif;
+    font-weight:700;
+    font-size:1rem;
+    background:var(--vermilion);
+    color:#fff;
+    border:none;
+    padding:12px 28px;
+    border-radius:16px;
+    box-shadow:0 5px 0 #B33A2A;
+    cursor:pointer;
+  }
+  .play-btn:active{ transform:translateY(4px); box-shadow:0 1px 0 #B33A2A; }
+
+  @keyframes drift{
+    0%{ transform:translateY(0); opacity:0.7; }
+    90%{ opacity:0.5; }
+    100%{ transform:translateY(-520px); opacity:0; }
+  }
+  @keyframes glowPulse{
+    0%{ filter:brightness(1.9) drop-shadow(0 0 12px var(--lantern)); }
+    100%{ filter:brightness(1) drop-shadow(0 0 0 transparent); }
+  }
+  @keyframes toastFloat{
+    0%{ opacity:0; transform:translate(-50%,6px) scale(0.8); }
+    25%{ opacity:1; transform:translate(-50%,0) scale(1.1); }
+    100%{ opacity:0; transform:translate(-50%,-26px) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .bokeh{ animation:none; }
+    .world{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mochi Tower</h1>
+  <p class="subtitle">stack the night market's finest, as high as it'll go</p>
+
+  <div class="topbar">
+    <div class="pill">Score: <span id="scoreVal">0</span></div>
+    <div class="pill">Best: <span id="bestVal">0</span></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="world" id="world">
+      <div class="base"></div>
+    </div>
+
+    <div class="overlay" id="startOverlay">
+      <h2>🍡 Mochi Tower</h2>
+      <p>Tap or press space to drop each mochi onto the stack. Line it up perfectly to keep its size — miss the edge and it topples!</p>
+      <button class="play-btn" id="playBtn">Play</button>
+    </div>
+
+    <div class="overlay hidden" id="overOverlay">
+      <h2>Tower toppled!</h2>
+      <div class="score-line">Score: <span id="finalScore">0</span></div>
+      <div class="best-line" id="newBestLine"></div>
+      <button class="play-btn" id="againBtn">Play Again</button>
+    </div>
+  </div>
+
+  <p class="hint">tap the tower · space / ↓ also works</p>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'mochi-tower-best';
+  const stage = document.getElementById('stage');
+  const world = document.getElementById('world');
+  const scoreEl = document.getElementById('scoreVal');
+  const bestEl = document.getElementById('bestVal');
+  const startOverlay = document.getElementById('startOverlay');
+  const overOverlay = document.getElementById('overOverlay');
+  const finalScoreEl = document.getElementById('finalScore');
+  const newBestLine = document.getElementById('newBestLine');
+
+  const BLOCK_H = 24;
+  const BASE_H = 34;
+  const FLAVORS = [
+    { base:'#FF9FBE', light:'#FFD6E4' }, // sakura
+    { base:'#8FBB63', light:'#C7E3A8' }, // matcha
+    { base:'#FFC94A', light:'#FFE79A' }, // yuzu
+    { base:'#A87CC7', light:'#D8BCEE' }, // ube
+    { base:'#B97A4B', light:'#E0B487' }, // hoji
+    { base:'#F4E9D8', light:'#FFFDF6' }  // milk
+  ];
+
+  let stageW = 0, stageH = 0;
+  let blocks = [];       // landed blocks {x,width,level,color}
+  let moving = null;     // current sliding block
+  let score = 0;
+  let best = 0;
+  let state = 'ready';   // ready | playing | over
+  let rafId = null;
+  let lastTs = 0;
+
+  function measure(){
+    const r = stage.getBoundingClientRect();
+    stageW = r.width;
+    stageH = r.height;
+  }
+  window.addEventListener('resize', measure);
+
+  async function loadBest(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value) best = parseInt(res.value, 10) || 0;
+    }catch(e){ best = 0; }
+    bestEl.textContent = best;
+  }
+  async function saveBest(){
+    try{ await window.storage.set(STORAGE_KEY, String(best), false); }catch(e){}
+  }
+
+  function flavorFor(level){ return FLAVORS[level % FLAVORS.length]; }
+
+  function makeBlockEl(color){
+    const el = document.createElement('div');
+    el.style.background = `linear-gradient(160deg, ${color.light}, ${color.base})`;
+    return el;
+  }
+
+  function visibleLevels(){
+    return Math.floor((stageH - BASE_H - 90) / BLOCK_H);
+  }
+
+  function updateCamera(){
+    const vis = visibleLevels();
+    const over = Math.max(0, blocks.length - vis);
+    world.style.transform = `translateY(${over * BLOCK_H}px)`;
+  }
+
+  function spawnDebris(x, width, level, color){
+    if(width < 1) return;
+    const el = document.createElement('div');
+    el.className = 'debris';
+    el.style.left = x + 'px';
+    el.style.width = width + 'px';
+    el.style.bottom = (BASE_H + level * BLOCK_H) + 'px';
+    el.style.background = `linear-gradient(160deg, ${color.light}, ${color.base})`;
+    world.appendChild(el);
+    requestAnimationFrame(()=>{
+      el.classList.add('falling');
+      const dir = (x + width/2 < stageW/2) ? -1 : 1;
+      el.style.transform = `translate(${dir*40}px, 260px) rotate(${dir*70}deg)`;
+    });
+    setTimeout(()=> el.remove(), 750);
+  }
+
+  function showCombo(text){
+    const el = document.createElement('div');
+    el.className = 'combo-toast';
+    el.textContent = text;
+    el.style.left = '50%';
+    el.style.bottom = (BASE_H + (blocks.length) * BLOCK_H + 40) + 'px';
+    world.appendChild(el);
+    requestAnimationFrame(()=> el.classList.add('show'));
+    setTimeout(()=> el.remove(), 950);
+  }
+
+  function spawnMoving(width, level){
+    const flavor = flavorFor(level);
+    const el = makeBlockEl(flavor);
+    el.className = 'moving';
+    el.style.width = width + 'px';
+    el.style.bottom = (BASE_H + level * BLOCK_H) + 'px';
+    if(moving && moving.el) moving.el.remove();
+    world.appendChild(el);
+    const startFromLeft = level % 2 === 0;
+    moving = {
+      el, width, level, color: flavor,
+      x: startFromLeft ? 0 : (stageW - width),
+      dir: startFromLeft ? 1 : -1,
+      speed: Math.min(2.6, 1.15 + score * 0.045)
+    };
+    el.style.transform = `translateX(${moving.x}px)`;
+  }
+
+  function tick(ts){
+    if(state !== 'playing'){ return; }
+    if(!lastTs) lastTs = ts;
+    const dt = Math.min(32, ts - lastTs);
+    lastTs = ts;
+
+    moving.x += moving.dir * moving.speed * (dt / 16);
+    const max = stageW - moving.width;
+    if(moving.x <= 0){ moving.x = 0; moving.dir = 1; }
+    if(moving.x >= max){ moving.x = max; moving.dir = -1; }
+    moving.el.style.transform = `translateX(${moving.x}px)`;
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function dropBlock(){
+    if(state !== 'playing' || !moving) return;
+
+    const top = blocks.length ? blocks[blocks.length-1] : { x:0, width:stageW };
+    const overlapStart = Math.max(moving.x, top.x);
+    const overlapEnd = Math.min(moving.x + moving.width, top.x + top.width);
+    const overlapW = overlapEnd - overlapStart;
+
+    if(overlapW <= 2){
+      gameOver();
+      return;
+    }
+
+    const isPerfect = (moving.width - overlapW) <= 4;
+    const newWidth = isPerfect ? moving.width : overlapW;
+    const newX = isPerfect ? top.x + (top.width - newWidth)/2 : overlapStart;
+
+    const leftoverLeftW = overlapStart - moving.x;
+    const leftoverRightW = (moving.x + moving.width) - overlapEnd;
+    if(!isPerfect){
+      spawnDebris(moving.x, leftoverLeftW, moving.level, moving.color);
+      spawnDebris(overlapEnd, leftoverRightW, moving.level, moving.color);
+    }
+
+    moving.el.remove();
+
+    const landedEl = makeBlockEl(moving.color);
+    landedEl.className = 'block' + (isPerfect ? ' perfect-glow' : '');
+    landedEl.style.width = newWidth + 'px';
+    landedEl.style.left = newX + 'px';
+    landedEl.style.bottom = (BASE_H + moving.level * BLOCK_H) + 'px';
+    world.appendChild(landedEl);
+
+    blocks.push({ x:newX, width:newWidth, level:moving.level, color:moving.color });
+
+    score += isPerfect ? 2 : 1;
+    scoreEl.textContent = score;
+    if(isPerfect) showCombo('PERFECT!');
+
+    updateCamera();
+    spawnMoving(newWidth, blocks.length);
+  }
+
+  function gameOver(){
+    state = 'over';
+    if(moving && moving.el){
+      const el = moving.el;
+      el.style.transition = 'transform 0.7s ease, opacity 0.7s ease';
+      const dir = (moving.x + moving.width/2 < stageW/2) ? -1 : 1;
+      requestAnimationFrame(()=>{
+        el.style.transform = `translateX(${moving.x + dir*50}px) rotate(${dir*80}deg) translateY(220px)`;
+        el.style.opacity = '0';
+      });
+      setTimeout(()=> el.remove(), 750);
+    }
+    cancelAnimationFrame(rafId);
+    finalScoreEl.textContent = score;
+    if(score > best){
+      best = score;
+      bestEl.textContent = best;
+      newBestLine.textContent = 'New best! 🎉';
+      saveBest();
+    } else {
+      newBestLine.textContent = '';
+    }
+    setTimeout(()=> overOverlay.classList.remove('hidden'), 400);
+  }
+
+  function startGame(){
+    measure();
+    blocks.forEach(()=>{});
+    world.querySelectorAll('.block, .moving, .debris, .combo-toast').forEach(el => el.remove());
+    world.style.transform = 'translateY(0px)';
+    blocks = [];
+    score = 0;
+    scoreEl.textContent = 0;
+    state = 'playing';
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+    lastTs = 0;
+    spawnMoving(Math.min(120, stageW * 0.4), 0);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  document.getElementById('playBtn').addEventListener('click', startGame);
+  document.getElementById('againBtn').addEventListener('click', startGame);
+
+  stage.addEventListener('click', (e)=>{
+    if(e.target.closest('.overlay')) return;
+    dropBlock();
+  });
+
+  window.addEventListener('keydown', (e)=>{
+    if(e.code === 'Space' || e.code === 'ArrowDown' || e.code === 'Enter'){
+      e.preventDefault();
+      if(state === 'ready') startGame();
+      else if(state === 'playing') dropBlock();
+      else if(state === 'over') startGame();
+    }
+  });
+
+  function spawnBokeh(){
+    const b = document.createElement('div');
+    b.className = 'bokeh';
+    const size = 10 + Math.random()*22;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = (Math.random()*90) + '%';
+    b.style.bottom = '-20px';
+    b.style.animationDuration = (7 + Math.random()*6) + 's';
+    stage.appendChild(b);
+    setTimeout(()=> b.remove(), 14000);
+  }
+  setInterval(spawnBokeh, 1400);
+
+  measure();
+  loadBest();
+})();
+</script>
+</body>
+</html>
